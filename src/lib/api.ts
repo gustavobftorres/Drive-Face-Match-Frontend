@@ -12,15 +12,18 @@ export async function fetchAuthUrl(): Promise<string> {
   if (!response.ok) {
     throw new Error("Failed to fetch auth URL");
   }
-  const data = await response.json() as { url: string };
+  const data = await response.json() as { url: string; code_verifier: string };
+  sessionStorage.setItem("oauth_code_verifier", data.code_verifier);
   return data.url;
 }
 
 export async function exchangeCode(code: string): Promise<{ access_token: string; email: string }> {
+  const code_verifier = sessionStorage.getItem("oauth_code_verifier") ?? "";
+  sessionStorage.removeItem("oauth_code_verifier");
   const response = await fetch(`${API_URL}/api/v1/auth/google/callback`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ code, code_verifier }),
   });
   if (!response.ok) {
     throw new Error("Failed to exchange auth code");
